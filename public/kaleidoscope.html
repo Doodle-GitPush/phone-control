@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kaleidoscope</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; background: #000;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    canvas { display: block; position: fixed; inset: 0; }
+
+    /* Top nav */
+    .topbar { position: fixed; top: 14px; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px; z-index: 10; pointer-events: none; }
+    .topbar > * { pointer-events: auto; }
+    .back { color: rgba(255,255,255,.7); font-size: 13px; text-decoration: none;
+      padding: 6px 12px; border-radius: 8px; background: rgba(0,0,0,.45); backdrop-filter: blur(10px); }
+    .back:hover { color: #fff; }
+    .top-right { display: flex; align-items: center; gap: 8px; }
+    .status { display: flex; align-items: center; gap: 6px; font-size: 12px;
+      color: rgba(255,255,255,.55); padding: 6px 10px; border-radius: 8px;
+      background: rgba(0,0,0,.45); backdrop-filter: blur(10px); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #555; }
+    .dot.live { background: #2bd576; box-shadow: 0 0 0 3px rgba(43,213,118,.2); }
+    #setupBtn { font: inherit; font-size: 13px; color: rgba(255,255,255,.7);
+      padding: 6px 12px; border-radius: 8px; background: rgba(0,0,0,.45);
+      backdrop-filter: blur(10px); border: 0; cursor: pointer; }
+    #setupBtn:hover { color: #fff; }
+
+    /* Pattern name — always visible, dims between transitions */
+    .pat-hud { position: fixed; top: 56px; left: 50%; transform: translateX(-50%);
+      font-size: 13px; padding: 4px 14px; border-radius: 20px;
+      background: rgba(0,0,0,.42); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,.09);
+      color: rgba(255,255,255,.38); pointer-events: none;
+      transition: color .5s ease; z-index: 10; white-space: nowrap; }
+    .pat-hud.flash { color: rgba(255,255,255,.88); }
+
+    /* Bottom controls — single row */
+    .controls { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+      z-index: 10; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+      justify-content: center;
+      padding: 11px 15px; border-radius: 18px;
+      background: rgba(0,0,0,.52); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,.1); }
+
+    .lbl { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+      color: rgba(255,255,255,.35); padding: 0 3px; }
+    .sep { width: 1px; height: 18px; background: rgba(255,255,255,.12); margin: 0 2px; }
+    button.ctrl { font: inherit; font-size: 12.5px; padding: 5px 11px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.08);
+      color: rgba(255,255,255,.7); cursor: pointer; transition: all .12s; white-space: nowrap; }
+    button.ctrl:hover { background: rgba(255,255,255,.16); color: #fff; }
+    button.ctrl.sel { background: rgba(255,255,255,.22); color: #fff;
+      border-color: rgba(255,255,255,.35); }
+
+    /* Setup card */
+    .card { position: fixed; inset: 0; display: flex; align-items: center;
+      justify-content: center; z-index: 20; background: rgba(0,0,0,.75);
+      backdrop-filter: blur(6px); }
+    .card .inner { background: #111318; border: 1px solid rgba(255,255,255,.1);
+      border-radius: 22px; box-shadow: 0 20px 60px rgba(0,0,0,.7);
+      padding: 28px 32px; max-width: 420px; color: #e8eaf0; }
+    .card h1 { margin: 0 0 4px; font-size: 21px; }
+    .card p  { margin: 4px 0 16px; color: rgba(255,255,255,.5); font-size: 14px; line-height: 1.5; }
+    .kv { display: grid; grid-template-columns: 90px 1fr; gap: 8px 12px; font-size: 14px; }
+    .kv .k { color: rgba(255,255,255,.38); }
+    .kv .v { font-weight: 650; }
+    .card .foot { margin-top: 18px; font-size: 12.5px; color: rgba(255,255,255,.36); line-height: 1.7; }
+    .card .foot b { color: rgba(255,255,255,.62); }
+    .card .close { margin-top: 16px; padding: 10px; background: rgba(255,255,255,.1);
+      border: 0; border-radius: 10px; color: #e8eaf0; font: inherit; font-size: 14px;
+      cursor: pointer; width: 100%; }
+    .card .close:hover { background: rgba(255,255,255,.18); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <canvas id="glc"></canvas>
+
+  <div class="topbar">
+    <a class="back" href="/games.html">← Games</a>
+    <div class="top-right">
+      <div class="status"><div class="dot" id="dot"></div><span id="statusText">Waiting…</span></div>
+      <button id="setupBtn">Setup</button>
+    </div>
+  </div>
+
+  <!-- Current pattern name — updates as you rotate the phone -->
+  <div class="pat-hud" id="patName">🌊 Plasma</div>
+
+  <div class="controls">
+    <span class="lbl">Segments</span>
+    <button class="ctrl btn-seg"     data-s="3">3</button>
+    <button class="ctrl btn-seg"     data-s="4">4</button>
+    <button class="ctrl btn-seg sel" data-s="6">6</button>
+    <button class="ctrl btn-seg"     data-s="8">8</button>
+    <button class="ctrl btn-seg"     data-s="12">12</button>
+    <div class="sep"></div>
+    <span class="lbl">Color</span>
+    <button class="ctrl btn-col sel" data-c="0">🌈</button>
+    <button class="ctrl btn-col"     data-c="1">🔥</button>
+    <button class="ctrl btn-col"     data-c="2">❄️</button>
+    <button class="ctrl btn-col"     data-c="3">🌿</button>
+    <button class="ctrl btn-col"     data-c="4">⚡</button>
+  </div>
+
+  <div class="card hidden" id="card">
+    <div class="inner">
+      <h1>🔮 Kaleidoscope</h1>
+      <p>Use the phone like a real kaleidoscope — <b>rotate</b>, <b>tilt</b>, and <b>shake</b> it.</p>
+      <div class="kv">
+        <span class="k">Protocol</span><span class="v">UDP · JSON</span>
+        <span class="k">Address</span><span class="v" id="ip">…</span>
+        <span class="k">Port</span><span class="v" id="port">…</span>
+        <span class="k">Sensors</span><span class="v">Gravity · Accel · Gyro · Quaternion · Touch</span>
+      </div>
+      <div class="foot">
+        <b>Spin the phone</b> (face rotating toward/away) — cycles through patterns.<br/>
+        <b>Tilt</b> in any direction — shifts the center and changes colors.<br/>
+        <b>Nod or rock</b> the phone — tumbles the inner content.<br/>
+        <b>Shake</b> — distortion burst. <b>Touch the ZIGSIM screen</b> — ripple.
+      </div>
+      <button class="close" id="closeCard">Got it</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/kaleidoscope.js"></script>
+</body>
+</html>

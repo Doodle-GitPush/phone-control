@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Phone Games</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; background: #0d0f14;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #e8eaf0; }
+
+    header { padding: 40px 28px 20px; display: flex; align-items: flex-end; justify-content: space-between; }
+    h1 { font-size: 28px; font-weight: 800; letter-spacing: -.02em; }
+    h1 span { color: rgba(255,255,255,.35); font-weight: 400; font-size: 16px;
+      display: block; margin-top: 4px; letter-spacing: 0; }
+    .status { display: flex; align-items: center; gap: 8px; font-size: 13px;
+      color: rgba(255,255,255,.5); padding: 6px 14px; border-radius: 20px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #555; flex-shrink: 0; }
+    .dot.live { background: #2bd576; box-shadow: 0 0 0 3px rgba(43,213,118,.2); }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px; padding: 8px 28px 40px; }
+
+    .card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 18px; padding: 22px; text-decoration: none; color: inherit;
+      display: flex; flex-direction: column; gap: 10px;
+      transition: background .15s, border-color .15s, transform .1s; }
+    .card:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.15);
+      transform: translateY(-2px); }
+    .card .icon { font-size: 32px; line-height: 1; }
+    .card .name { font-size: 16px; font-weight: 700; }
+    .card .desc { font-size: 13px; color: rgba(255,255,255,.5); line-height: 1.5; flex: 1; }
+    .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
+    .chip { font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+    .chip-tilt  { background: rgba(79,140,255,.2);  color: #7eb0ff; }
+    .chip-accel { background: rgba(255,160,40,.2);  color: #ffb84d; }
+    .chip-gyro  { background: rgba(165,94,255,.2);  color: #c27cff; }
+    .chip-touch { background: rgba(43,213,118,.18); color: #4bd88a; }
+    .chip-webgl { background: rgba(255,60,180,.18); color: #ff7ed4; }
+
+    .section-label { padding: 0 28px 10px; font-size: 11px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.3); }
+
+    .setup-note { margin: 0 28px 28px; padding: 16px 18px; border-radius: 14px;
+      background: rgba(255,160,40,.08); border: 1px solid rgba(255,160,40,.18);
+      font-size: 13px; color: rgba(255,255,255,.6); line-height: 1.55; }
+    .setup-note b { color: rgba(255,160,40,.9); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Phone Games <span>Powered by ZIGSIM</span></h1>
+    <div class="status"><div class="dot" id="dot"></div><span id="statusText">Waiting…</span></div>
+  </header>
+
+  <div class="section-label">All games</div>
+  <div class="grid">
+
+    <a class="card" href="/pong.html">
+      <div class="icon">🏓</div>
+      <div class="name">Classic Pong</div>
+      <div class="desc">Tilt to move your paddle. Beat the AI.</div>
+      <div class="chips">
+        <span class="chip chip-tilt">tilt</span>
+      </div>
+    </a>
+
+    <a class="card" href="/tennis3d.html">
+      <div class="icon">🏓</div>
+      <div class="name">Table Tennis 3D</div>
+      <div class="desc">The phone <b>is</b> the paddle. Angle it to aim, tilt to reach, swing to hit. Full 3D with an AI opponent.</div>
+      <div class="chips">
+        <span class="chip chip-gyro">orientation</span>
+        <span class="chip chip-tilt">reach</span>
+        <span class="chip chip-accel">swing</span>
+        <span class="chip chip-webgl">3D</span>
+      </div>
+    </a>
+
+    <a class="card" href="/boxing.html">
+      <div class="icon">🥊</div>
+      <div class="name">Rhythm Boxing</div>
+      <div class="desc">Targets pulse on the beat. Punch the phone to hit — timing is everything.</div>
+      <div class="chips">
+        <span class="chip chip-accel">punch</span>
+        <span class="chip chip-tilt">dodge</span>
+      </div>
+    </a>
+
+    <a class="card" href="/plane.html">
+      <div class="icon">✈️</div>
+      <div class="name">Paper Plane</div>
+      <div class="desc">Tilt the phone to fly. Roll your wrist for a barrel roll. Dodge the pillars.</div>
+      <div class="chips">
+        <span class="chip chip-tilt">fly</span>
+        <span class="chip chip-gyro">barrel roll</span>
+      </div>
+    </a>
+
+    <a class="card" href="/kaleidoscope.html">
+      <div class="icon">🔮</div>
+      <div class="name">Kaleidoscope</div>
+      <div class="desc">Tilt to shift patterns, twist for spin, shake for bursts. Five WebGL patterns × five color schemes.</div>
+      <div class="chips">
+        <span class="chip chip-tilt">tilt</span>
+        <span class="chip chip-gyro">spin</span>
+        <span class="chip chip-accel">shake</span>
+        <span class="chip chip-webgl">WebGL</span>
+      </div>
+    </a>
+
+    <a class="card" href="/">
+      <div class="icon">🎨</div>
+      <div class="name">Whiteboard</div>
+      <div class="desc">Use the phone as a paintbrush on a full-screen canvas.</div>
+      <div class="chips">
+        <span class="chip chip-tilt">tilt</span>
+        <span class="chip chip-touch">touch</span>
+      </div>
+    </a>
+
+  </div>
+
+  <div class="setup-note">
+    <b>Games using Swing / Punch / Spin</b> need extra sensors in ZIGSIM:<br/>
+    Enable <b>Accelerometer</b> and <b>Gyroscope</b> in addition to Gravity + Quaternion + Touch.
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    socket.on('connect', () => socket.emit('hello', 'display'));
+    socket.on('zig', ({ connected, source }) => {
+      document.getElementById('dot').classList.toggle('live', connected);
+      document.getElementById('statusText').textContent = connected
+        ? `Phone connected · ${source || 'sensor'}` : 'Waiting for phone…';
+    });
+  </script>
+</body>
+</html>

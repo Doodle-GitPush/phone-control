@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Table Tennis 3D</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; background: #05070d;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    canvas { display: block; position: fixed; inset: 0; }
+
+    /* Top bar */
+    .topbar { position: fixed; top: 14px; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px; z-index: 10; pointer-events: none; }
+    .topbar > * { pointer-events: auto; }
+    .back { color: rgba(255,255,255,.72); font-size: 13px; text-decoration: none;
+      padding: 6px 12px; border-radius: 8px; background: rgba(0,0,0,.4); backdrop-filter: blur(10px); }
+    .back:hover { color: #fff; }
+    .top-right { display: flex; align-items: center; gap: 8px; }
+    .status { display: flex; align-items: center; gap: 6px; font-size: 12px;
+      color: rgba(255,255,255,.6); padding: 6px 10px; border-radius: 8px;
+      background: rgba(0,0,0,.4); backdrop-filter: blur(10px); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #555; }
+    .dot.live { background: #2bd576; box-shadow: 0 0 0 3px rgba(43,213,118,.2); }
+    .btn { font: inherit; font-size: 13px; color: rgba(255,255,255,.72);
+      padding: 6px 12px; border-radius: 8px; background: rgba(0,0,0,.4);
+      backdrop-filter: blur(10px); border: 0; cursor: pointer; }
+    .btn:hover { color: #fff; background: rgba(255,255,255,.12); }
+
+    /* Score */
+    .score { position: fixed; top: 52px; left: 50%; transform: translateX(-50%);
+      z-index: 10; display: flex; align-items: center; gap: 18px; pointer-events: none;
+      font-variant-numeric: tabular-nums; }
+    .score .s { font-size: 34px; font-weight: 800; line-height: 1; }
+    .score .you  { color: #5b9bff; }
+    .score .ai   { color: #ff5b6e; }
+    .score .vs   { font-size: 14px; color: rgba(255,255,255,.3); font-weight: 700; }
+    .score .lab  { font-size: 10px; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; text-align: center; margin-top: 3px; opacity: .55; }
+
+    /* Center message */
+    .msg { position: fixed; top: 46%; left: 50%; transform: translate(-50%,-50%);
+      z-index: 10; text-align: center; pointer-events: none; }
+    .msg .big { font-size: 30px; font-weight: 800; color: #fff;
+      text-shadow: 0 2px 20px rgba(0,0,0,.6); }
+    .msg .sub { margin-top: 8px; font-size: 15px; color: rgba(255,255,255,.62);
+      text-shadow: 0 2px 12px rgba(0,0,0,.7); }
+
+    /* Bottom hint */
+    .hint { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+      z-index: 10; font-size: 12.5px; color: rgba(255,255,255,.5);
+      background: rgba(0,0,0,.4); backdrop-filter: blur(10px);
+      padding: 7px 14px; border-radius: 20px; pointer-events: none; white-space: nowrap; }
+
+    /* Setup card */
+    .card { position: fixed; inset: 0; display: flex; align-items: center;
+      justify-content: center; z-index: 20; background: rgba(0,0,0,.78);
+      backdrop-filter: blur(6px); }
+    .card .inner { background: #11141c; border: 1px solid rgba(255,255,255,.1);
+      border-radius: 22px; box-shadow: 0 20px 60px rgba(0,0,0,.7);
+      padding: 28px 32px; max-width: 440px; color: #e8eaf0; }
+    .card h1 { margin: 0 0 4px; font-size: 21px; }
+    .card p  { margin: 4px 0 16px; color: rgba(255,255,255,.5); font-size: 14px; line-height: 1.5; }
+    .kv { display: grid; grid-template-columns: 92px 1fr; gap: 8px 12px; font-size: 14px; }
+    .kv .k { color: rgba(255,255,255,.38); }
+    .kv .v { font-weight: 650; }
+    .card .foot { margin-top: 18px; font-size: 12.5px; color: rgba(255,255,255,.4); line-height: 1.75; }
+    .card .foot b { color: rgba(255,255,255,.66); }
+    .card .close { margin-top: 18px; padding: 11px; background: rgba(91,155,255,.22);
+      border: 1px solid rgba(91,155,255,.4); border-radius: 10px; color: #cfe0ff;
+      font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; }
+    .card .close:hover { background: rgba(91,155,255,.32); }
+    .hidden { display: none !important; }
+  </style>
+
+  <!-- Three.js resolved from the local vendored copy (no internet needed at play time) -->
+  <script type="importmap">
+  { "imports": { "three": "/vendor/three.module.js" } }
+  </script>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <div class="topbar">
+    <a class="back" href="/games.html">← Games</a>
+    <div class="top-right">
+      <div class="status"><div class="dot" id="dot"></div><span id="statusText">Waiting…</span></div>
+      <button class="btn" id="recenterBtn" title="Hold the phone as your paddle, then press">Recenter ⟳</button>
+      <button class="btn" id="setupBtn">Setup</button>
+    </div>
+  </div>
+
+  <div class="score">
+    <div><div class="s ai"  id="scoreAI">0</div><div class="lab">AI</div></div>
+    <div class="vs">–</div>
+    <div><div class="s you" id="scoreYou">0</div><div class="lab">You</div></div>
+  </div>
+
+  <div class="msg hidden" id="msg">
+    <div class="big" id="msgBig"></div>
+    <div class="sub" id="msgSub"></div>
+  </div>
+
+  <div class="hint" id="hint">Move the phone left/right to slide the paddle · angle it to aim · swing to hit · SPACE to serve</div>
+
+  <div class="card hidden" id="card">
+    <div class="inner">
+      <h1>🏓 Table Tennis 3D</h1>
+      <p>The phone <b>is</b> your paddle. ZIGSIM streams its orientation and motion in real time.</p>
+      <div class="kv">
+        <span class="k">Protocol</span><span class="v">UDP · JSON</span>
+        <span class="k">Address</span><span class="v" id="ip">…</span>
+        <span class="k">Port</span><span class="v" id="port">…</span>
+        <span class="k">Sensors</span><span class="v">Gravity · Accel · Gyro · Quaternion · Touch</span>
+      </div>
+      <div class="foot">
+        <b>Hold the phone</b> like a paddle and press <b>Recenter</b> to set neutral.<br/>
+        <b>Physically move it left & right</b> — the paddle slides with your hand.
+        Tilting or twisting in place won't move it.<br/>
+        <b>Angle the phone</b> — the paddle face aims your shot (loft, cut, cross-court).<br/>
+        <b>Swing</b> to strike · <b>twist</b> for spin · <b>SPACE</b> serves · <b>i</b> inverts move dir.
+      </div>
+      <button class="close" id="closeCard">Got it</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="module" src="/tennis3d.js"></script>
+</body>
+</html>

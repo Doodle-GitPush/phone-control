@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Paper Plane</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden;
+      background: #87ceeb;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    canvas { display: block; }
+    .back { position: fixed; top: 14px; left: 16px; z-index: 10;
+      color: rgba(255,255,255,.85); font-size: 14px; text-decoration: none;
+      padding: 6px 12px; border-radius: 8px; background: rgba(0,80,160,.35);
+      backdrop-filter: blur(8px); }
+    .back:hover { color: #fff; }
+    #setupBtn { position: fixed; top: 14px; right: 16px; z-index: 10;
+      color: rgba(255,255,255,.85); font-size: 14px; padding: 6px 12px;
+      border-radius: 8px; background: rgba(0,80,160,.35); backdrop-filter: blur(8px);
+      border: 0; cursor: pointer; }
+    #setupBtn:hover { color: #fff; }
+    .card { position: fixed; inset: 0; display: flex; align-items: center;
+      justify-content: center; z-index: 20; background: rgba(0,30,80,.72);
+      backdrop-filter: blur(4px); }
+    .card .inner { background: #0d1a2e; border: 1px solid rgba(100,160,255,.2);
+      border-radius: 22px; box-shadow: 0 20px 60px rgba(0,0,0,.6);
+      padding: 28px 32px; max-width: 440px; color: #e8eaf0; }
+    .card h1 { margin: 0 0 4px; font-size: 21px; }
+    .card p  { margin: 4px 0 16px; color: rgba(255,255,255,.5); font-size: 14px; line-height: 1.5; }
+    .kv { display: grid; grid-template-columns: 96px 1fr; gap: 8px 12px; font-size: 14.5px; }
+    .kv .k { color: rgba(255,255,255,.4); }
+    .kv .v { font-weight: 650; }
+    .card .foot { margin-top: 18px; font-size: 12.5px; color: rgba(255,255,255,.38); line-height: 1.6; }
+    .card .foot b { color: rgba(255,255,255,.6); }
+    .card .close { margin-top: 16px; padding: 10px 18px; background: rgba(100,180,255,.15);
+      border: 0; border-radius: 10px; color: #e8eaf0; font: inherit; font-size: 14px;
+      cursor: pointer; width: 100%; }
+    .card .close:hover { background: rgba(100,180,255,.28); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <a class="back" href="/games.html">← Games</a>
+  <button id="setupBtn">Setup</button>
+  <canvas id="game"></canvas>
+
+  <div class="card hidden" id="card">
+    <div class="inner">
+      <h1>✈️ Paper Plane</h1>
+      <p>Tilt the phone to fly. Twist your wrist for a barrel roll — it saves you from one crash.</p>
+      <div class="kv">
+        <span class="k">Protocol</span><span class="v">UDP · JSON</span>
+        <span class="k">Address</span><span class="v" id="ip">…</span>
+        <span class="k">Port</span><span class="v" id="port">…</span>
+        <span class="k">Sensors</span><span class="v">Gravity · Quaternion · Gyro</span>
+      </div>
+      <div class="foot">
+        <b>Tilt phone forward/back</b> to move the plane up and down.<br/>
+        <b>Twist your wrist</b> (roll the phone) for a barrel roll — passes through one obstacle.<br/>
+        Press <b>SPACE</b> to start / restart. Up/Down arrows also control altitude.
+      </div>
+      <button class="close" id="closeCard">Let's fly!</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/plane.js"></script>
+</body>
+</html>

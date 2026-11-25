@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Phone Paint — Whiteboard</title>
+  <style>
+    :root { --board: #f7f7f8; --ink: #1b1d22; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: var(--board);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    #paint, #cursor { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+    #cursor { pointer-events: none; }
+
+    /* Top toolbar */
+    .toolbar { position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 10px; align-items: center; padding: 8px 12px;
+      background: rgba(255,255,255,.85); backdrop-filter: blur(10px);
+      border: 1px solid rgba(0,0,0,.08); border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.10); z-index: 10; flex-wrap: wrap; max-width: 94vw; }
+    .toolbar button { font: inherit; font-size: 14px; border: 0; cursor: pointer;
+      padding: 8px 13px; border-radius: 10px; background: #ececed; color: var(--ink); }
+    .toolbar button:hover { background: #e2e2e4; }
+    .toolbar button.active { background: var(--ink); color: #fff; }
+    .sep { width: 1px; align-self: stretch; background: rgba(0,0,0,.1); margin: 2px 2px; }
+    .pill { display: flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 10px;
+      font-size: 13px; color: #6b6f76; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: #c7ccd2; }
+    .dot.live { background: #2bd576; box-shadow: 0 0 0 4px rgba(43,213,118,.18); }
+
+    /* Palette */
+    .palette { display: flex; gap: 6px; align-items: center; }
+    .swatch { width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
+      border: 2px solid rgba(0,0,0,.12); }
+    .swatch.sel { border-color: var(--ink); box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(0,0,0,.18); }
+    .swatch.eraser { background: #fff !important; display: flex; align-items: center;
+      justify-content: center; font-size: 13px; color: #888; }
+    input[type=range] { width: 110px; accent-color: var(--ink); }
+
+    /* Setup card */
+    .card { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+      z-index: 20; background: rgba(247,247,248,.55); backdrop-filter: blur(2px); }
+    .card .inner { background: #fff; border: 1px solid rgba(0,0,0,.08); border-radius: 22px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.16); padding: 28px 32px; max-width: 440px; }
+    .card h1 { margin: 0 0 4px; font-size: 21px; color: var(--ink); }
+    .card p { margin: 4px 0 16px; color: #6b6f76; font-size: 14px; line-height: 1.5; }
+    .kv { display: grid; grid-template-columns: 96px 1fr; gap: 8px 12px; font-size: 14.5px; }
+    .kv .k { color: #8a8f97; }
+    .kv .v { color: var(--ink); font-weight: 650; font-variant-numeric: tabular-nums; }
+    .card .foot { margin-top: 18px; font-size: 12.5px; color: #9aa0a8; line-height: 1.55; }
+    .card .foot b { color: #6b6f76; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <canvas id="paint"></canvas>
+  <canvas id="cursor"></canvas>
+
+  <div class="toolbar">
+    <span class="pill"><span class="dot" id="dot"></span><span id="statusText">Waiting for phone…</span></span>
+    <span class="sep"></span>
+    <div class="palette" id="palette"></div>
+    <input type="range" id="size" min="2" max="60" value="14" title="Brush size" />
+    <span class="sep"></span>
+    <button id="flipX" title="Flip left–right (key: X)">⇆</button>
+    <button id="flipY" title="Flip up–down (key: Y)">⇅</button>
+    <button id="recenterBtn" title="Recenter neutral tilt (key: R)">Recenter</button>
+    <span class="sep"></span>
+    <button id="setupBtn">Setup</button>
+    <button id="saveBtn">Save</button>
+    <button id="clearBtn">Clear</button>
+    <a href="/games.html" style="font:inherit;font-size:14px;padding:8px 13px;border-radius:10px;background:#ececed;color:#1b1d22;text-decoration:none;">🎮 Games</a>
+  </div>
+
+  <div class="card" id="card">
+    <div class="inner">
+      <h1>🖌️ Connect ZIGSIM</h1>
+      <p>Open the <b>ZIGSIM</b> app on your phone (same Wi‑Fi as this computer) and enter these settings, then press <b>Start</b>.</p>
+      <div class="kv">
+        <span class="k">Protocol</span><span class="v">UDP</span>
+        <span class="k">Format</span><span class="v">JSON</span>
+        <span class="k">Address</span><span class="v" id="ip">…</span>
+        <span class="k">Port</span><span class="v" id="port">…</span>
+        <span class="k">Sensors</span><span class="v">Gravity · Quaternion · Touch</span>
+      </div>
+      <div class="foot">
+        Tilt the phone to move the brush. <b>Hold a finger on the ZIGSIM screen</b>
+        to paint — or, if your ZIGSIM has no Touch sensor, just <b>hold the SPACE bar</b>
+        here. Press <b>R</b> recenter · <b>C</b> clear · <b>S</b> save.
+        Movement reversed? Press <b>X</b> (left/right) or <b>Y</b> (up/down) to flip.
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/whiteboard.js"></script>
+</body>
+</html>
